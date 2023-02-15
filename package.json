@@ -1,0 +1,41 @@
+{
+  "name": "google-docs",
+  "version": "0.0.1",
+  "dependencies": {
+    "@codemirror/commands": "^6.0.0",
+    "@codemirror/lang-javascript": "^6.0.0",
+    "@codemirror/language": "^6.0.0",
+    "@codemirror/view": "^6.0.0",
+    "@lezer/highlight": "^1.0.0",
+    "@lezer/html": "^1.0.0",
+    "@lezer/javascript": "^1.0.0",
+    "crelt": "^1.0.0",
+    "prosemirror-collab": "^1.0.0",
+    "prosemirror-example-setup": "^1.0.0",
+    "prosemirror-history": "^1.0.0",
+    "prosemirror-menu": "^1.0.0",
+    "prosemirror-model": "^1.0.0",
+    "prosemirror-schema-basic": "1.0.0",
+    "prosemirror-schema-list": "^1.0.0",
+    "prosemirror-state": "^1.0.0",
+    "prosemirror-transform": "^1.0.0",
+    "prosemirror-view": "^1.0.0"
+  },
+  "devDependencies": {
+    "serve-static": "^1.14.1",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
+  },
+  "scripts": {
+    "build": "webpack",
+    "start": "node server/start.js"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.krononsoft.com/dev/internal/googledocs"
+  },
+  "resolutions": {
+    "prosemirror-model": "1.0.0"
+  }
+}
