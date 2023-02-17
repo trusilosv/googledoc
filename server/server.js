@@ -7,7 +7,9 @@ const {getInstance, instanceInfo} = require("./instance")
 const router = new Router
 
 exports.handleCollabRequest = function(req, resp) {
-  return router.resolve(req, resp)
+  const s = router.resolve(req, resp)
+
+  return s
 }
 
 // Object that represents an HTTP response.
@@ -52,7 +54,6 @@ function handle(method, url, f) {
       try {
         output = f(...args, req, resp)
       } catch (err) {
-        console.log(err.stack)
         output = new Output(err.status || 500, err.toString())
       }
       if (output) output.resp(resp)
@@ -135,7 +136,6 @@ function outputEvents(inst, data) {
 handle("GET", ["docs", null, "events"], (id, req, resp) => {
   let version = nonNegInteger(req.query.version)
   let commentVersion = nonNegInteger(req.query.commentVersion)
-
   let inst = getInstance(id, reqIP(req))
   let data = inst.getEvents(version, commentVersion)
   if (data === false)
@@ -159,6 +159,16 @@ function reqIP(request) {
 
 // The event submission endpoint, which a client sends an event to.
 handle("POST", ["docs", null, "events"], (data, id, req) => {
+  let version = nonNegInteger(data.version)
+  let steps = data.steps.map(s => Step.fromJSON(schema, s))
+  let result = getInstance(id, reqIP(req)).addEvents(version, steps, data.comment, data.clientID)
+  if (!result)
+    return new Output(409, "Version not current")
+  else
+    return Output.json(result)
+})
+
+handle("DELETE", ["docs"], (data, id, req) => {
   let version = nonNegInteger(data.version)
   let steps = data.steps.map(s => Step.fromJSON(schema, s))
   let result = getInstance(id, reqIP(req)).addEvents(version, steps, data.comment, data.clientID)
