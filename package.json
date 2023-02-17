@@ -10,6 +10,7 @@
     "@lezer/html": "^1.0.0",
     "@lezer/javascript": "^1.0.0",
     "crelt": "^1.0.0",
+    "node-static": "^0.7.11",
     "prosemirror-collab": "^1.0.0",
     "prosemirror-example-setup": "^1.0.0",
     "prosemirror-history": "^1.0.0",
@@ -22,13 +23,12 @@
     "prosemirror-view": "^1.0.0"
   },
   "devDependencies": {
-    "serve-static": "^1.14.1",
+    "serve-static": "^1.15.0",
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.1"
   },
   "scripts": {
-    "build": "webpack",
-    "start": "node server/start.js"
+    "start": "webpack --watch & node server/start"
   },
   "license": "MIT",
   "repository": {
