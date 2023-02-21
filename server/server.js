@@ -2,7 +2,7 @@ const {Step} = require("prosemirror-transform")
 
 const {Router} = require("./route")
 const {schema} = require("../schema")
-const {getInstance, instanceInfo} = require("./instance")
+const { getInstance, instanceInfo, deleteDoc, createDoc } = require("./instance")
 
 const router = new Router
 
@@ -168,12 +168,12 @@ handle("POST", ["docs", null, "events"], (data, id, req) => {
     return Output.json(result)
 })
 
-handle("DELETE", ["docs"], (data, id, req) => {
-  let version = nonNegInteger(data.version)
-  let steps = data.steps.map(s => Step.fromJSON(schema, s))
-  let result = getInstance(id, reqIP(req)).addEvents(version, steps, data.comment, data.clientID)
-  if (!result)
-    return new Output(409, "Version not current")
-  else
-    return Output.json(result)
+handle("POST", ["docs"], (data, id, req) => {
+  createDoc(data.name)
+  return Output.json(instanceInfo())
+})
+
+handle("DELETE", ["docs", null], (id, req) => {
+  deleteDoc(id)
+  return Output.json(instanceInfo())
 })

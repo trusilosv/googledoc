@@ -41,3 +41,7 @@ export function GET(url) {
 export function POST(url, body, type) {
   return req({url, method: "POST", body, headers: {"Content-Type": type}})
 }
+
+export function DELETE(url) {
+  return req({url , method: "DELETE"})
+}

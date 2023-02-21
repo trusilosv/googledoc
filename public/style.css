@@ -75,23 +75,19 @@ li.commentText + li.commentText {
 }
 
 .doclist {
-  z-index: 20;
+  font-size: larger;
   background: lightskyblue;
-  display:block;
-  position: absolute;
-  left: 20px;
-  border: 2px solid;
-  z-index: 20;
-  border-top-width: 0px;
-  padding: 0px 30px 10px 10px;
-  top: 72px;
-  margin: 0;
+  display: block;
+  padding: 30px;
+  margin: 0px;
 }
 
 .doclist li {
-  display: block;
+  width: 300px;
+  display: flex;
+  justify-content: space-between;
   padding: 1px 3px;
-  margin: 0;
+  margin-top: 20px;
   cursor: pointer;
 }
 
@@ -101,19 +97,20 @@ li.commentText + li.commentText {
 }
 
 .DocListButton {
-  width: 224.5px;
   border: 2px solid;
   background: dodgerblue;
   font-size: 16px;
   font-weight: bold;
+  cursor: pointer;
 }
 
 .docinfo {
   position: relative;
   background: lightskyblue;
-  padding: 20px;
+  padding: 25px;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 .docname {
   font-size: 25px;
@@ -437,6 +434,7 @@ img.ProseMirror-separator {
   border: 2px solid rgba(0, 0, 0, 0.2);
   padding: 5px 0;
   margin-bottom: 23px;
+  min-height: 50vh;
 }
 
 .ProseMirror p:first-child,
@@ -455,18 +453,29 @@ img.ProseMirror-separator {
   outline: none;
 }
 
-.Body {
+body {
   margin: 0px;
   height: 100vh;
   background: #d5d8da;
 }
 
-.Page{ 
-
+.Header {
+  background-color: darkgrey;
+  height: 50px;
+  background-image: url("https://uploads-ssl.webflow.com/63aaf89e9905fd6a1593c75f/63ad69096c21e64624c901c2_ks-logo.svg");
+  background-repeat: no-repeat;
+  background-size: 81px;
 }
 
-.Editor {
-
+.Haeder__nav {
+  display: flex;
+  gap: 30px;
+  padding: 15px 81px;
+} 
+.Logo {
+  width: 81px;
+  position: absolute;
+  z-index: 20;
 }
 
 .ProseMirror p { margin-bottom: 1em }

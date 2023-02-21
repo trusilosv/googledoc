@@ -1,4 +1,5 @@
 const {readFileSync, writeFile} = require("fs")
+const { join } = require("path")
 
 const {Mapping} = require("prosemirror-transform")
 
@@ -13,7 +14,7 @@ class Instance {
   constructor(id, doc, comments) {
     this.id = id
     this.doc = doc || schema.node("doc", null, [schema.node("paragraph", null, [
-      schema.text("This is a collaborative test document. Start editing to make it more interesting!")
+      schema.text("New doc")
     ])])
     this.comments = comments || new Comments
     // The version number of the document instance.
@@ -152,7 +153,7 @@ function doSave() {
 }
 
 function getInstance(id, ip) {
-  let inst = instances[id] || newInstance(id)
+  let inst = instances[id] || false
   if (ip) inst.registerUser(ip)
   inst.lastActive = Date.now()
   return inst
@@ -180,3 +181,17 @@ function instanceInfo() {
   return found
 }
 exports.instanceInfo = instanceInfo
+
+function deleteDoc(id) {
+  delete instances[id];
+  doSave()
+}
+
+function createDoc(id) {
+  instances[id] = new Instance()
+  doSave()
+}
+
+exports.deleteDoc = deleteDoc
+exports.getInstance = getInstance
+exports.createDoc = createDoc
