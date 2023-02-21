@@ -5,8 +5,6 @@ import {EditorView} from "prosemirror-view"
 import {history} from "prosemirror-history"
 import {collab, receiveTransaction, sendableSteps, getVersion} from "prosemirror-collab"
 import {MenuItem} from "prosemirror-menu"
-import crel from "crelt"
-
 import {schema} from "../schema"
 import {GET, POST} from "./http"
 import {Reporter} from "./reporter"
@@ -232,64 +230,19 @@ let info = {
   name: document.querySelector("#docname"),
   users: document.querySelector("#users")
 }
-document.querySelector("#changedoc").addEventListener("click", e => {
-  GET("/docs/").then(data => showDocList(e.target, JSON.parse(data)),
-                                    err => report.failure(err))
-})
 
 function userString(n) {
   return "(" + n + " user" + (n == 1 ? "" : "s") + ")"
 }
 
-let docList
-function showDocList(node, list) {
-  if (docList) docList.parentNode.removeChild(docList)
-
-  let ul = docList = document.body.appendChild(crel("ul", {class: "doclist"}))
-  ul.appendChild(crel("li", {"data-new": "true"},"Create a new document"))
-  list.forEach(doc => {
-    ul.appendChild(crel("li", {"data-name": doc.id},
-                        doc.id + " " + userString(doc.users)))
-  })
-  
-
-  let rect = node.getBoundingClientRect()
-  ul.addEventListener("click", e => {
-    if (e.target.nodeName == "LI") {
-      ul.parentNode.removeChild(ul)
-      docList = null
-      if (e.target.hasAttribute("data-name"))
-        location.hash = "#edit-" + encodeURIComponent(e.target.getAttribute("data-name"))
-      else
-        newDocument()
-    }
-  })
-}
-document.addEventListener("click", () => {
-  if (docList) {
-    docList.parentNode.removeChild(docList)
-    docList = null
-  }
-})
-
-function newDocument() {
-  let name = prompt("Name the new document", "")
-  if (name)
-    location.hash = "#edit-" + encodeURIComponent(name)
-}
-
 let connection = null
 
-function connectFromHash() {
-  let isID = /^#edit-(.+)/.exec(location.hash)
-  if (isID) {
-    if (connection) connection.close()
-    info.name.textContent = decodeURIComponent(isID[1])
-    connection = window.connection = new EditorConnection(report, "/docs/" + isID[1])
-    connection.request.then(() => connection.view.focus())
-    return true
-  }
+function connect() {
+  if (connection) connection.close()
+  info.name.textContent = decodeURIComponent(location.pathname.split('/')[2])
+  connection = window.connection = new EditorConnection(report, "/collab-backend" + location.pathname)
+  connection.request.then(() => connection.view.focus())
+  return true
 }
 
-addEventListener("hashchange", connectFromHash)
-connectFromHash() || (location.hash = "#edit-Example")
+connect() 

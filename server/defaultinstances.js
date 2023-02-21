@@ -5,14 +5,15 @@ const $text = (str, marks) => schema.text(str, marks)
 const em = schema.marks.em.create(), strong = schema.marks.strong.create()
 
 function populateDefaultInstances(newInstance) {
-
-newInstance("Example", $node("doc", null, [
-  $node("heading", {level: 2}, [$text("Example Document")]),
-  $node("paragraph", null, [
-    $text("There is nothing here yet. "),
-    $text("Add something!", [em])
-  ])
-]))
+for (let i = 0; i < 10; i++) {
+  newInstance("Example" + i, $node("doc", null, [
+    $node("heading", {level: 2}, [$text("Example Document")]),
+    $node("paragraph", null, [
+      $text("There is nothing here yet. "),
+      $text("Add something!", [em])
+    ])
+  ])) 
+}
 
 newInstance("Business Plan", $node("doc", null, [
   $node("heading", {level: 1}, [$text("Business Plan")]),
