@@ -43,6 +43,6 @@ createServer((req, resp) => {
     break;
     default: maybeCollab(req, resp) || fileServer.serve(req, resp) 
   }
-}).listen(port, "127.0.0.1")
+}).listen(process.env.PORT || port)
 
 console.log("Collab demo server listening on " + port)

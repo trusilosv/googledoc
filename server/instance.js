@@ -1,8 +1,5 @@
 const {readFileSync, writeFile} = require("fs")
-const { join } = require("path")
-
 const {Mapping} = require("prosemirror-transform")
-
 const {schema} = require("../schema")
 const {Comments, Comment} = require("./comments")
 const {populateDefaultInstances} = require("./defaultinstances")
@@ -11,8 +8,9 @@ const MAX_STEP_HISTORY = 10000
 
 // A collaborative editing document instance.
 class Instance {
-  constructor(id, doc, comments) {
+  constructor(id, name, doc, comments) {
     this.id = id
+    this.name = name || id
     this.doc = doc || schema.node("doc", null, [schema.node("paragraph", null, [
       schema.text("New doc")
     ])])
@@ -132,7 +130,7 @@ if (process.argv.indexOf("--fresh") == -1) {
 
 if (json) {
   for (let prop in json)
-    newInstance(prop, schema.nodeFromJSON(json[prop].doc),
+    newInstance(prop, json[prop].name,  schema.nodeFromJSON(json[prop].doc),
                 new Comments(json[prop].comments.map(c => Comment.fromJSON(c))))
 } else {
   populateDefaultInstances(newInstance)
@@ -148,7 +146,8 @@ function doSave() {
   let out = {}
   for (var prop in instances)
     out[prop] = {doc: instances[prop].doc.toJSON(),
-                 comments: instances[prop].comments.comments}
+                 comments: instances[prop].comments.comments,
+                 name: instances[prop].name }
   writeFile(saveFile, JSON.stringify(out), () => null)
 }
 
@@ -160,7 +159,7 @@ function getInstance(id, ip) {
 }
 exports.getInstance = getInstance
 
-function newInstance(id, doc, comments) {
+function newInstance(id, name, doc, comments) {
   if (++instanceCount > maxCount) {
     let oldest = null
     for (let id in instances) {
@@ -171,13 +170,13 @@ function newInstance(id, doc, comments) {
     delete instances[oldest.id]
     --instanceCount
   }
-  return instances[id] = new Instance(id, doc, comments)
+  return instances[id] = new Instance(id, name, doc, comments)
 }
 
 function instanceInfo() {
   let found = []
   for (let id in instances)
-    found.push({id: id, users: instances[id].userCount})
+    found.push({id: id, name: instances[id].name, users: instances[id].userCount})
   return found
 }
 exports.instanceInfo = instanceInfo
@@ -186,9 +185,13 @@ function deleteDoc(id) {
   delete instances[id];
   doSave()
 }
+function generateId () {
+  return Date.now()
+}
 
-function createDoc(id) {
-  instances[id] = new Instance()
+function createDoc(name) {
+  const id = generateId();
+  instances[id] = new Instance(id, name)
   doSave()
 }
 
