@@ -3,6 +3,7 @@ const {Step} = require("prosemirror-transform")
 const {Router} = require("./route")
 const {schema} = require("../schema")
 const { getInstance, instanceInfo, deleteDoc, createDoc } = require("./instance")
+const { getUser, createUser, getCurentUser, setCurrentUser, usersInfo } = require("./users")
 
 const router = new Router
 
@@ -163,7 +164,7 @@ function reqIP(request) {
 // The event submission endpoint, which a client sends an event to.
 handle("POST", ["docs", null, "events"], (data, id, req) => {
   let version = nonNegInteger(data.version)
-  let steps = data.steps.map(s => Step.fromJSON(schema, s))
+  let steps = data.steps.map(s => Step.fromJSON(schema,s ))
   let result = getInstance(id, reqIP(req)).addEvents(version, steps, data.comment, data.clientID)
   if (!result)
     return new Output(409, "Version not current")
@@ -180,3 +181,28 @@ handle("DELETE", ["docs", null], (id, req) => {
   deleteDoc(id)
   return Output.json(instanceInfo())
 })
+
+handle("POST", ["users"], (data) => {
+  setCurrentUser(createUser(data.name).id);
+  return Output.json(getCurentUser());
+})
+
+handle("GET", ["users", null], (id) => {
+  return Output.json(getUser(id));
+})
+
+handle("GET", ["users"], () => {
+  return Output.json(usersInfo());
+})
+
+handle("GET", ["current-user"], () => {
+  return Output.json(getCurentUser());
+})
+
+handle("POST", ["current-user"], (data, id, req) => {
+  console.log("post", data)
+  setCurrentUser(data.id)
+  return Output.json(getCurentUser());
+})
+
+

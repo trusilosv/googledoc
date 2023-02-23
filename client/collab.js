@@ -100,14 +100,14 @@ class EditorConnection {
   }
 
   // Load the document from the server and start up
-  start() {
+  start(version) {
     this.run(GET(this.url)).then(data => {
       data = JSON.parse(data)
       this.report.success()
       this.backOff = 0
       this.dispatch({type: "loaded",
                      doc: schema.nodeFromJSON(data.doc),
-                     version: data.version,
+                     version: version || data.version,
                      users: data.users,
                      comments: {version: data.commentVersion, comments: data.comments}})
     }, err => {
@@ -251,6 +251,9 @@ function connect() {
 document.querySelector("#deletedoc").addEventListener("click", e => {
   DELETE("/collab-backend/docs/" + info.id)
     .then(() => location.pathname = "", err => report.failure(err))
+})
+document.querySelector("#ver0").addEventListener("click", e => {
+  connection.start("0")
 })
 
 connect() 
