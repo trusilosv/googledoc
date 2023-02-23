@@ -6,7 +6,7 @@ import {history} from "prosemirror-history"
 import {collab, receiveTransaction, sendableSteps, getVersion} from "prosemirror-collab"
 import {MenuItem} from "prosemirror-menu"
 import {schema} from "../schema"
-import {GET, POST} from "./http"
+import {GET, POST, DELETE} from "./http"
 import {Reporter} from "./reporter"
 import {commentPlugin, commentUI, addAnnotation, annotationIcon} from "./comment"
 
@@ -227,6 +227,7 @@ let menu = buildMenuItems(schema)
 menu.fullMenu[0].push(annotationMenuItem)
 
 let info = {
+  id: "",
   name: document.querySelector("#docname"),
   users: document.querySelector("#users")
 }
@@ -239,10 +240,17 @@ let connection = null
 
 function connect() {
   if (connection) connection.close()
-  info.name.textContent = decodeURIComponent(location.pathname.split('/')[2])
   connection = window.connection = new EditorConnection(report, "/collab-backend" + location.pathname)
-  connection.request.then(() => connection.view.focus())
+  connection.request.then((data) => {
+    connection.view.focus(); 
+    info.name.textContent = JSON.parse(data).name;
+    info.id = JSON.parse(data).id;
+  })
   return true
 }
+document.querySelector("#deletedoc").addEventListener("click", e => {
+  DELETE("/collab-backend/docs/" + info.id)
+    .then(() => location.pathname = "", err => report.failure(err))
+})
 
 connect() 

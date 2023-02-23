@@ -6,7 +6,7 @@ const em = schema.marks.em.create(), strong = schema.marks.strong.create()
 
 function populateDefaultInstances(newInstance) {
 for (let i = 0; i < 10; i++) {
-  newInstance("Example" + i, $node("doc", null, [
+  newInstance(i + 1, "Example" + i, $node("doc", null, [
     $node("heading", {level: 2}, [$text("Example Document")]),
     $node("paragraph", null, [
       $text("There is nothing here yet. "),
@@ -15,7 +15,7 @@ for (let i = 0; i < 10; i++) {
   ])) 
 }
 
-newInstance("Business Plan", $node("doc", null, [
+newInstance(12, "Business Plan", $node("doc", null, [
   $node("heading", {level: 1}, [$text("Business Plan")]),
   $node("ordered_list", null, [
     $node("list_item", null, [$node("paragraph", null, [$text("Give away software")])]),
@@ -24,13 +24,13 @@ newInstance("Business Plan", $node("doc", null, [
   ])
 ]))
 
-newInstance("*scratch*", $node("doc", null, [
+newInstance(13, "*scratch*", $node("doc", null, [
   $node("code_block", null, [
     $text(";; This buffer is for notes you don't want to save, and for Lisp evaluation.\n;; If you want to create a file, visit that file with C-x C-f,\n;; then enter the text in that file's own buffer.")
   ])
 ]))
 
-newInstance("Nonsense", $node("doc", null, [
+newInstance(14, "Nonsense", $node("doc", null, [
   $node("blockquote", null, [
     $node("paragraph", null, [
       $text("Mona tried to tell me"), $node("hard_break"),
@@ -52,7 +52,7 @@ newInstance("Nonsense", $node("doc", null, [
   ])
 ]))
 
-newInstance("Comment Section", $node("doc", null, [
+newInstance(15, "Comment Section", $node("doc", null, [
   $node("heading", {level: 1}, [$text("Comment Section")]),
   $node("paragraph", null, [
     $text("The good thing about this comment section is that everybody can delete comments.")

@@ -82,7 +82,10 @@ handle("GET", ["docs", null], (id, req) => {
                       users: inst.userCount,
                       version: inst.version,
                       comments: inst.comments.comments,
-                      commentVersion: inst.comments.version})
+                      commentVersion: inst.comments.version,
+                      name: inst.name,
+                      id: id
+                    })
 })
 
 function nonNegInteger(str) {
