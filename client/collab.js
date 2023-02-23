@@ -6,7 +6,7 @@ import {history} from "prosemirror-history"
 import {collab, receiveTransaction, sendableSteps, getVersion} from "prosemirror-collab"
 import {MenuItem} from "prosemirror-menu"
 import {schema} from "../schema"
-import {GET, POST} from "./http"
+import {GET, POST, DELETE} from "./http"
 import {Reporter} from "./reporter"
 import {commentPlugin, commentUI, addAnnotation, annotationIcon} from "./comment"
 
@@ -248,5 +248,9 @@ function connect() {
   })
   return true
 }
+document.querySelector("#deletedoc").addEventListener("click", e => {
+  DELETE("/collab-backend/docs/" + info.id)
+    .then(() => location.pathname = "", err => report.failure(err))
+})
 
 connect() 
