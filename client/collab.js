@@ -227,6 +227,7 @@ let menu = buildMenuItems(schema)
 menu.fullMenu[0].push(annotationMenuItem)
 
 let info = {
+  id: "",
   name: document.querySelector("#docname"),
   users: document.querySelector("#users")
 }
@@ -239,9 +240,12 @@ let connection = null
 
 function connect() {
   if (connection) connection.close()
-  info.name.textContent = decodeURIComponent(location.pathname.split('/')[2])
   connection = window.connection = new EditorConnection(report, "/collab-backend" + location.pathname)
-  connection.request.then(() => connection.view.focus())
+  connection.request.then((data) => {
+    connection.view.focus(); 
+    info.name.textContent = JSON.parse(data).name;
+    info.id = JSON.parse(data).id;
+  })
   return true
 }
 

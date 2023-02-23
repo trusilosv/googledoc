@@ -14,6 +14,7 @@ function showDocList(list) {
     const li = crel("li");
     li.appendChild(crel("a", { "data-name": doc.id },doc.id + userString(doc.users)));
     li.appendChild(crel("button", { class: "DocListButton", "data-name": doc.id },"delete"));
+    li.appendChild(crel("a", { "data-id": doc.id },doc.name + userString(doc.users)));
     ul.appendChild(li);
   });
   
@@ -24,6 +25,7 @@ function showDocList(list) {
     if (e.target.nodeName == "BUTTON") {
       DELETE("collab-backend/docs/" + e.target.getAttribute("data-name"))
         .then(data => showDocList(JSON.parse(data)), err => report.failure(err))
+      location.pathname = "/docs/" + e.target.getAttribute("data-id") 
     }
   });
 }
