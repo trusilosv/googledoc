@@ -252,8 +252,5 @@ document.querySelector("#deletedoc").addEventListener("click", e => {
   DELETE("/collab-backend/docs/" + info.id)
     .then(() => location.pathname = "", err => report.failure(err))
 })
-document.querySelector("#ver0").addEventListener("click", e => {
-  connection.start("0")
-})
 
 connect() 
