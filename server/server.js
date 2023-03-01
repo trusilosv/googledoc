@@ -3,7 +3,7 @@ const {Step} = require("prosemirror-transform")
 const {Router} = require("./route")
 const {schema} = require("../schema")
 const { getInstance, instanceInfo, deleteDoc, createDoc } = require("./instance")
-const { getUser, createUser, getCurentUser, setCurrentUser, usersInfo } = require("./users")
+const { getUser, createUser, usersInfo, doSave } = require("./users")
 
 const router = new Router
 
@@ -85,7 +85,8 @@ handle("GET", ["docs", null], (id, req) => {
                       comments: inst.comments.comments,
                       commentVersion: inst.comments.version,
                       name: inst.name,
-                      id: id
+                      id: id,
+                      stepsInfo: inst.getStepsInfo()
                     })
 })
 
@@ -127,11 +128,13 @@ class Waiting {
 
 function outputEvents(inst, data) {
   return Output.json({version: inst.version,
-                      commentVersion: inst.comments.version,
-                      steps: data.steps.map(s => s.toJSON()),
-                      clientIDs: data.steps.map(step => step.clientID),
-                      comment: data.comment,
-                      users: data.users})
+  commentVersion: inst.comments.version,
+  steps: data.steps.map(s => s.toJSON()),
+  clientIDs: data.steps.map(step => step.clientID),
+  comment: data.comment,
+  users: data.users,
+  stepsInfo: inst.getStepsInfo()
+})
 }
 
 // An endpoint for a collaborative document instance which
@@ -166,6 +169,7 @@ handle("POST", ["docs", null, "events"], (data, id, req) => {
   let version = nonNegInteger(data.version)
   let steps = data.steps.map(s => Step.fromJSON(schema,s ))
   let result = getInstance(id, reqIP(req)).addEvents(version, steps, data.comment, data.clientID)
+   result.stepsInfo = getInstance(id, reqIP(req)).getStepsInfo()
   if (!result)
     return new Output(409, "Version not current")
   else
@@ -183,8 +187,9 @@ handle("DELETE", ["docs", null], (id, req) => {
 })
 
 handle("POST", ["users"], (data) => {
-  setCurrentUser(createUser(data.name).id);
-  return Output.json(getCurentUser());
+   const userId = createUser(data.name);
+  doSave();
+  return Output.json({ id: userId });
 })
 
 handle("GET", ["users", null], (id) => {
@@ -194,15 +199,3 @@ handle("GET", ["users", null], (id) => {
 handle("GET", ["users"], () => {
   return Output.json(usersInfo());
 })
-
-handle("GET", ["current-user"], () => {
-  return Output.json(getCurentUser());
-})
-
-handle("POST", ["current-user"], (data, id, req) => {
-  console.log("post", data)
-  setCurrentUser(data.id)
-  return Output.json(getCurentUser());
-})
-
-

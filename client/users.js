@@ -1,6 +1,6 @@
 import { GET, POST } from "./http";
 
-const select = document.querySelector("#users");
+const select = document.querySelector("#select_users");
 
 function addUsers(users) {
   select.innerHTML = "";
@@ -14,8 +14,12 @@ function addUsers(users) {
   newUserOption.text = "create user";
   newUserOption.value = "new";
   select.add(newUserOption);
-  const currentUser =  JSON.parse(sessionStorage.getItem("user"));
-  if (currentUser) select.value = JSON.parse(sessionStorage.getItem("user")).id;
+  const currentUser =  JSON.parse(sessionStorage.getItem("userId"));
+  if (currentUser) {
+    select.value = JSON.parse(sessionStorage.getItem("userId"))
+  } else {
+    select.value = 1
+  }
 }
 
 function createUser() {
@@ -24,20 +28,14 @@ function createUser() {
   if (name) {
     POST("/collab-backend/users", json, "application/json")
       .then(data => {
-        sessionStorage.setItem("user", data)
+        sessionStorage.setItem("userId", JSON.parse(data).id)
       }, err => report.failure(err));
   }
 }
 
 function setCurrentUser() {
     if (select.value == "new") { createUser() }
-    else {
-      const json = JSON.stringify({ id: select.value });
-      POST("/collab-backend/current-user", json, "application/json")
-        .then(data => {
-          sessionStorage.setItem("user", data)
-        }, err => report.failure(err));
-    }
+    sessionStorage.setItem("userId" , select.value)
     usersLoading()
 }
 

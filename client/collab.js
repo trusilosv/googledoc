@@ -1,14 +1,14 @@
-import {exampleSetup, buildMenuItems} from "prosemirror-example-setup"
-import {Step} from "prosemirror-transform"
-import {EditorState} from "prosemirror-state"
-import {EditorView} from "prosemirror-view"
-import {history} from "prosemirror-history"
-import {collab, receiveTransaction, sendableSteps, getVersion} from "prosemirror-collab"
-import {MenuItem} from "prosemirror-menu"
-import {schema} from "../schema"
-import {GET, POST, DELETE} from "./http"
-import {Reporter} from "./reporter"
-import {commentPlugin, commentUI, addAnnotation, annotationIcon} from "./comment"
+import { exampleSetup, buildMenuItems } from "prosemirror-example-setup"
+import { Step } from "prosemirror-transform"
+import { EditorState } from "prosemirror-state"
+import { EditorView } from "prosemirror-view"
+import { history } from "prosemirror-history"
+import { collab, receiveTransaction, sendableSteps, getVersion } from "prosemirror-collab"
+import { MenuItem } from "prosemirror-menu"
+import { schema } from "../schema"
+import { GET, POST, DELETE } from "./http"
+import { Reporter } from "./reporter"
+import { commentPlugin, commentUI, addAnnotation, annotationIcon } from "./comment"
 
 const report = new Reporter()
 
@@ -42,11 +42,11 @@ class EditorConnection {
       info.users.textContent = userString(action.users) // FIXME ewww
       let editState = EditorState.create({
         doc: action.doc,
-        plugins: exampleSetup({schema, history: false, menuContent: menu.fullMenu}).concat([
+        plugins: exampleSetup({ schema, history: false, menuContent: menu.fullMenu }).concat([
           history(),
-          collab({version: action.version}),
+          collab({ version: action.version }),
           commentPlugin,
-          commentUI(transaction => this.dispatch({type: "transaction", transaction}))
+          commentUI(transaction => this.dispatch({ type: "transaction", transaction }))
         ]),
         comments: action.comments
       })
@@ -94,7 +94,7 @@ class EditorConnection {
       else
         this.setView(new EditorView(document.querySelector("#editor"), {
           state: this.state.edit,
-          dispatchTransaction: transaction => this.dispatch({type: "transaction", transaction})
+          dispatchTransaction: transaction => this.dispatch({ type: "transaction", transaction })
         }))
     } else this.setView(null)
   }
@@ -103,16 +103,20 @@ class EditorConnection {
   start(version) {
     this.run(GET(this.url)).then(data => {
       data = JSON.parse(data)
+      addVersionsList(data.stepsInfo)
       this.report.success()
       this.backOff = 0
-      this.dispatch({type: "loaded",
-                     doc: schema.nodeFromJSON(data.doc),
-                     version: version || data.version,
-                     users: data.users,
-                     comments: {version: data.commentVersion, comments: data.comments}})
+      this.dispatch({
+        type: "loaded",
+        doc: schema.nodeFromJSON(data.doc),
+        version: version || data.version,
+        users: data.users,
+        comments: { version: data.commentVersion, comments: data.comments }
+      })
     }, err => {
       this.report.failure(err)
     })
+
   }
 
   // Send a request for events that have happened since the version
@@ -124,11 +128,12 @@ class EditorConnection {
     this.run(GET(this.url + "/events?" + query)).then(data => {
       this.report.success()
       data = JSON.parse(data)
+      addVersionsList(data.stepsInfo)
       this.backOff = 0
       if (data.steps && (data.steps.length || data.comment.length)) {
         let tr = receiveTransaction(this.state.edit, data.steps.map(j => Step.fromJSON(schema, j)), data.clientIDs)
-        tr.setMeta(commentPlugin, {type: "receive", version: data.commentVersion, events: data.comment, sent: 0})
-        this.dispatch({type: "transaction", transaction: tr, requestDone: true})
+        tr.setMeta(commentPlugin, { type: "receive", version: data.commentVersion, events: data.comment, sent: 0 })
+        this.dispatch({ type: "transaction", transaction: tr, requestDone: true })
       } else {
         this.poll()
       }
@@ -137,9 +142,9 @@ class EditorConnection {
       if (err.status == 410 || badVersion(err)) {
         // Too far behind. Revert to server state
         this.report.failure(err)
-        this.dispatch({type: "restart"})
+        this.dispatch({ type: "restart" })
       } else if (err) {
-        this.dispatch({type: "recover", error: err})
+        this.dispatch({ type: "recover", error: err })
       }
     })
   }
@@ -147,34 +152,38 @@ class EditorConnection {
   sendable(editState) {
     let steps = sendableSteps(editState)
     let comments = commentPlugin.getState(editState).unsentEvents()
-    if (steps || comments.length) return {steps, comments}
+    if (steps || comments.length) return { steps, comments }
   }
 
   // Send the given steps to the server
-  send(editState, {steps, comments}) {
-    let json = JSON.stringify({version: getVersion(editState),
-                               steps: steps ? steps.steps.map(s => s.toJSON()) : [],
-                               clientID: steps ? steps.clientID : 0,
-                               comment: comments || []})
+  send(editState, { steps, comments }) {
+    let json = JSON.stringify({
+      version: getVersion(editState),
+      steps: steps ? steps.steps.map(s => s.toJSON()) : [],
+      clientID: steps ? (getCurrentUserId() || steps.clientID) : 0,
+      comment: comments || []
+    })
     this.run(POST(this.url + "/events", json, "application/json")).then(data => {
+      data = JSON.parse(data);
+      addVersionsList(data.stepsInfo)
       this.report.success()
       this.backOff = 0
       let tr = steps
-          ? receiveTransaction(this.state.edit, steps.steps, repeat(steps.clientID, steps.steps.length))
-          : this.state.edit.tr
-      tr.setMeta(commentPlugin, {type: "receive", version: JSON.parse(data).commentVersion, events: [], sent: comments.length})
-      this.dispatch({type: "transaction", transaction: tr, requestDone: true})
+        ? receiveTransaction(this.state.edit, steps.steps, repeat(steps.clientID, steps.steps.length))
+        : this.state.edit.tr
+      tr.setMeta(commentPlugin, { type: "receive", version: data.commentVersion, events: [], sent: comments.length })
+      this.dispatch({ type: "transaction", transaction: tr, requestDone: true })
     }, err => {
       if (err.status == 409) {
         // The client's document conflicts with the server's version.
         // Poll for changes and then try again.
         this.backOff = 0
-        this.dispatch({type: "poll"})
+        this.dispatch({ type: "poll" })
       } else if (badVersion(err)) {
         this.report.failure(err)
-        this.dispatch({type: "restart"})
+        this.dispatch({ type: "restart" })
       } else {
-        this.dispatch({type: "recover", error: err})
+        this.dispatch({ type: "recover", error: err })
       }
     })
   }
@@ -185,7 +194,7 @@ class EditorConnection {
     if (newBackOff > 1000 && this.backOff < 1000) this.report.delay(err)
     this.backOff = newBackOff
     setTimeout(() => {
-      if (this.state.comm == "recover") this.dispatch({type: "poll"})
+      if (this.state.comm == "recover") this.dispatch({ type: "poll" })
     }, this.backOff)
   }
 
@@ -242,15 +251,39 @@ function connect() {
   if (connection) connection.close()
   connection = window.connection = new EditorConnection(report, "/collab-backend" + location.pathname)
   connection.request.then((data) => {
-    connection.view.focus(); 
+    connection.view.focus();
     info.name.textContent = JSON.parse(data).name;
     info.id = JSON.parse(data).id;
   })
   return true
 }
+
 document.querySelector("#deletedoc").addEventListener("click", e => {
   DELETE("/collab-backend/docs/" + info.id)
     .then(() => location.pathname = "", err => report.failure(err))
 })
 
+function getCurrentUserId() {
+  return sessionStorage.getItem("userId");
+}
+
+
+
+const select = document.querySelector("#select_versions");
+
+function addVersionsList(stepsInfo) {
+  if (stepsInfo.length > 0) {
+    select.innerHTML = "";
+    stepsInfo.forEach(element => {
+      let option = document.createElement("option");
+      option.text = "version: " + element.version + " User name: " + element.userName + " CreatedAt: " + new Date(element.createdAt).toLocaleString();
+      option.value = element.version
+      select.add(option);
+    });
+    select.value = stepsInfo[stepsInfo.length - 1].version;
+  }
+}
+
+
+sessionStorage.setItem("userId", "1")
 connect() 

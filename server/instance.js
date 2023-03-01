@@ -2,32 +2,50 @@ const {readFileSync, writeFile} = require("fs")
 const {Mapping} = require("prosemirror-transform")
 const {schema} = require("../schema")
 const {Comments, Comment} = require("./comments")
-const {populateDefaultInstances} = require("./defaultinstances")
+const {Step} = require("prosemirror-transform")
+const {getUser} = require("./users")
 
 const MAX_STEP_HISTORY = 10000
 
 // A collaborative editing document instance.
 class Instance {
-  constructor(id, name, doc, comments) {
+  constructor(id, name, steps, comments) {
     this.id = id
     this.name = name || id
-    this.doc = doc || schema.node("doc", null, [schema.node("paragraph", null, [
-      schema.text("New doc")
-    ])])
+    this.doc = schema.node("doc", null, [schema.node("paragraph", null, [])])
     this.comments = comments || new Comments
-    // The version number of the document instance.
-    this.version = 0
-    this.steps = []
+    this.version = (Array.isArray(steps) && steps.length > 0) ? steps.length - 1 : 0
+    this.steps = steps || []
     this.lastActive = Date.now()
     this.users = Object.create(null)
     this.userCount = 0
     this.waiting = []
-
     this.collecting = null
+  }
+
+  loadVersionDoc(version) {
+    if(this.steps.length > 0) {
+      let doc = this.doc
+      for (let i = 0; i < version + 1; i++) {
+        let result = this.steps[i].apply(doc)
+        doc = result.doc
+      }
+      this.doc = doc
+    }
   }
 
   stop() {
     if (this.collecting != null) clearInterval(this.collecting)
+  }
+
+  getStepsInfo() {
+    return this.steps.map((step, index) => {
+        return {
+          version: index,
+          userName: getUser(step.clientID).name,
+          createdAt: step.createdAt
+        }
+    })
   }
 
   addEvents(version, steps, comments, clientID) {
@@ -36,6 +54,7 @@ class Instance {
     let doc = this.doc, maps = []
     for (let i = 0; i < steps.length; i++) {
       steps[i].clientID = clientID
+      steps[i].createdAt = Date.now()
       let result = steps[i].apply(doc)
       doc = result.doc
       maps.push(steps[i].getMap())
@@ -129,11 +148,18 @@ if (process.argv.indexOf("--fresh") == -1) {
 }
 
 if (json) {
-  for (let prop in json)
-    newInstance(prop, json[prop].name,  schema.nodeFromJSON(json[prop].doc),
-                new Comments(json[prop].comments.map(c => Comment.fromJSON(c))))
+  for (let prop in json){
+    newInstance(prop, json[prop].name, 
+      json[prop].steps.map((s, index) => {
+        let step = Step.fromJSON(schema, s)
+        step.clientID = json[prop].stepsInfo[index].clientID
+        step.createdAt = json[prop].stepsInfo[index].createdAt
+        return  step
+      }), 
+      new Comments(json[prop].comments.map(c => Comment.fromJSON(c))))
+    }
 } else {
-  populateDefaultInstances(newInstance)
+  newInstance("2", "newDoc")
 }
 
 let saveTimeout = null, saveEvery = 1e4
@@ -144,10 +170,14 @@ function scheduleSave() {
 function doSave() {
   saveTimeout = null
   let out = {}
-  for (var prop in instances)
-    out[prop] = {doc: instances[prop].doc.toJSON(),
-                 comments: instances[prop].comments.comments,
-                 name: instances[prop].name }
+  for (var prop in instances) {
+    out[prop] = {
+      steps: instances[prop].steps,
+      comments: instances[prop].comments.comments,
+      stepsInfo: instances[prop].steps.map(step => ({ clientID: step.clientID, createdAt: step.createdAt })),
+      name: instances[prop].name 
+    }
+  }
   writeFile(saveFile, JSON.stringify(out), () => null)
 }
 
@@ -159,7 +189,7 @@ function getInstance(id, ip) {
 }
 exports.getInstance = getInstance
 
-function newInstance(id, name, doc, comments) {
+function newInstance(id, name, steps, comments) {
   if (++instanceCount > maxCount) {
     let oldest = null
     for (let id in instances) {
@@ -170,7 +200,9 @@ function newInstance(id, name, doc, comments) {
     delete instances[oldest.id]
     --instanceCount
   }
-  return instances[id] = new Instance(id, name, doc, comments)
+  const inst = instances[id] = new Instance(id, name, steps, comments);
+  inst.loadVersionDoc(inst.version);
+  return inst
 }
 
 function instanceInfo() {
@@ -185,13 +217,10 @@ function deleteDoc(id) {
   delete instances[id];
   doSave()
 }
-function generateId () {
-  return Date.now()
-}
 
 function createDoc(name) {
-  const id = generateId();
-  instances[id] = new Instance(id, name)
+  const id = Date.now();
+  newInstance(id, name)
   doSave()
 }
 
